@@ -20,7 +20,7 @@ function love.load()
     -- set LOVE's default filter to "nearest-neighbor", which essentially
     love.graphics.setDefaultFilter('nearest', 'nearest')
 
-    love.window.setTitle('Pong')
+    love.window.setTitle('Pong it is my game' )
 
     -- "Seed" the RNG so that calls to random are always random
     -- use the current time, since that will vary on startup every time
@@ -49,7 +49,9 @@ function love.load()
     player1Score = 0
     player2Score = 0
 
-    servingPlayer = math.random(2) == 1 and 2
+    servingPlayer = 1 
+
+    winningPlayer = 0
 
     -- initialize our player paddles; make then global so that they can be
     -- detected by other functions and modules
@@ -58,6 +60,12 @@ function love.load()
 
     -- place a ball in the middle of the screen
     ball = Ball(VIRTUAL_WIDTH / 2 - 2, VIRTUAL_HEIGHT / 2 - 2, 5, 5)
+ 
+    if  servingPlayer == 1 then
+        ball.dx = 100
+    else 
+        ball.dx = -100 
+    end
 
     -- game state variable used to transition between different parts of the game
     gameState = 'start'
@@ -115,7 +123,7 @@ function love.update(dt)
         end
 
         -- detect upper and lower screen boundary collision and reverse if collided 
-        if ball.dy <= 0 then
+        if ball.y <= 0 then
             -- deflect the ball down 
             ball.y = 0
             ball.dy = -ball.dy
@@ -127,6 +135,36 @@ function love.update(dt)
             ball.y = VIRTUAL_HEIGHT - 4
             ball.dy = -ball.dy
             
+        end
+
+        -- if we reach the left or right edge of the screen,
+        -- go back to start and update the score
+
+        if ball.x < 0 then 
+            servingPlayer = 1
+            player2Score = player2Score + 1
+            ball:reset()
+
+            if player2Score >= 10 then
+                gameState = 'victory'
+                winningPlayer = 2
+            else
+                gameState = 'serve'
+            end
+        end
+
+    
+        if ball.x < 0 then 
+            servingPlayer = 2
+            player1Score = player1Score + 1
+            ball:reset()
+
+            if player1Score >= 10 then
+                gameState = 'victory'
+                winningPlayer = 1
+            else    
+                gameState = 'serve'
+            end
         end
         
         -- player 1 movement
@@ -173,11 +211,17 @@ function love.keypressed(key)
         -- function LOVE gives us to terminate application 
         love.event.quit()
 
+
     -- if we press enter during the start state of the game, we'll go into play mode
     -- during play mode, the ball will move in a random direction        
     elseif key == 'enter' or key == 'return' then
         if gameState == 'start' then
             gameState = 'serve'
+
+        elseif gameState == 'victory' then
+            gameState = 'start'
+            player1Score = 0 
+            player2Score = 0 
 
         elseif  gameState == 'serve' then
             gameState = 'play'
@@ -202,12 +246,26 @@ function love.draw()
     -- draw different things based on the state of the game
     love.graphics.setFont(smallFont)
 
-    if gameState == 'start' then 
-        love.graphics.printf("Welcome to Pong!", 0, 20, VIRTUAL_WIDTH, 'center')
-        love.graphics.printf("Press enter to play!", 0, 32, VIRTUAL_WIDTH, 'center')
+    if gameState == 'start' then
+        love.graphics.setFont(smallFont) 
+        love.graphics.printf("Welcome to Pong!", 0, 10, VIRTUAL_WIDTH, 'center')
+        love.graphics.printf("Press enter to begin!", 0, 20, VIRTUAL_WIDTH, 'center')
+
     elseif  gameState == 'serve' then
-        love.graphics.printf("Player" .. tostring(servingPlayer) .. "'s turn!", 0, 20, VIRTUAL_WIDTH, 'center')
+        love.graphics.setFont(smallFont)
+        love.graphics.printf("Player" .. tostring(servingPlayer) .. "'s serve!",
+         0, 20, VIRTUAL_WIDTH, 'center')
         love.graphics.printf("Press Enter to serve", 0, 32, VIRTUAL_WIDTH, 'center')
+    elseif gameState == 'victory' then
+        -- draw a victory message 
+        love.graphics.setFont(victoryFont)
+        love.graphics.printf('Player' .. tostring(winningPlayer) .. " wins!", 
+         0, 20, VIRTUAL_WIDTH, 'center')
+        love.graphics.setFont(smallFont)
+        love.graphics.printf("Press Enter to serve", 0, 42, VIRTUAL_WIDTH, 'center')
+
+    elseif gameState == 'play' then
+        -- no UI messages to display in polay
 
     end
     -- draw score on the left and right center of the screen

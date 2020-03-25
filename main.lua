@@ -29,12 +29,21 @@ function love.load()
 
     -- more "retro-looking" font object we can use for any text
     smallFont = love.graphics.newFont('font.ttf', 8)
+
+    largeFont = love.graphics.newFont('font.ttf', 16)
         
     -- larger font for drawing the score on the sceen 
     scoreFont = love.graphics.newFont('font.ttf', 32)
 
+    
     -- set LOVE's active font to the smallFont object
     love.graphics.setFont(smallFont)
+
+    sounds = {
+        ['paddle_hit'] = love.audio.newSource('paddle_hit.wav', 'static'),
+        ['point_scored'] = love.audio.newSource('point_scored.wav', 'static'),
+        ['wall_hit'] = love.audio.newSource('wall_hit.wav', 'static')
+    }
 
     -- initialize window width virtual resolution
    push:setupScreen(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, WINDOW_WIDTH, WINDOW_HEIGHT, {
@@ -101,6 +110,8 @@ function love.update(dt)
             ball.dx =  -ball.dx * 1.03
             ball.x = player1.x + 5
 
+            sounds['paddle_hit']:play()
+
             -- keep velocity going in the same direction, but randomize it
             if ball.dy < 0 then
                 ball.dy = -math.random(10, 150)
@@ -113,6 +124,8 @@ function love.update(dt)
             -- deflect ball to the left
             ball.dx =  -ball.dx * 1.03
             ball.x = player2.x - 4
+
+            sounds['paddle_hit']:play()
 
              -- keep velocity going in the same direction, but randomize it
              if ball.dy < 0 then
@@ -127,6 +140,8 @@ function love.update(dt)
             -- deflect the ball down 
             ball.y = 0
             ball.dy = -ball.dy
+
+            sounds['wall_hit']:play()
         end
 
         -- -4 to account for the ball's size
@@ -134,7 +149,8 @@ function love.update(dt)
         if ball.y >= VIRTUAL_HEIGHT - 4 then
             ball.y = VIRTUAL_HEIGHT - 4
             ball.dy = -ball.dy
-            
+
+            sounds['wall_hit']:play()
         end
 
         -- if we reach the left or right edge of the screen,
@@ -143,27 +159,31 @@ function love.update(dt)
         if ball.x < 0 then 
             servingPlayer = 1
             player2Score = player2Score + 1
-            ball:reset()
+            
+            sounds['point_scored']:play()
 
             if player2Score >= 10 then
                 gameState = 'victory'
                 winningPlayer = 2
             else
                 gameState = 'serve'
+                ball:reset()
             end
         end
 
     
-        if ball.x < 0 then 
+        if ball.x > VIRTUAL_WIDTH then 
             servingPlayer = 2
             player1Score = player1Score + 1
-            ball:reset()
 
-            if player1Score >= 10 then
-                gameState = 'victory'
+            sounds['point_scored']:play()
+        
+            if player1Score == 10 then
+                gameState = 'done'
                 winningPlayer = 1
             else    
                 gameState = 'serve'
+                ball:reset()
             end
         end
         
